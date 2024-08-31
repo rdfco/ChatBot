@@ -1,0 +1,41 @@
+version: "3.8"
+
+networks:
+  STIM:
+    driver: bridge
+
+volumes:
+  STIM_dev:
+
+
+services:
+  backend:
+    build:
+      context: .
+      target: base
+    ports:
+      - "7377:7377"
+    environment:
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-http://localhost:7377,http://0.0.0.0:7377,http://localhost:5173,http://127.0.0.1:5173}"
+      AUTH_USERNAME: "${AUTH_USERNAME}"
+      AUTH_PASSWORD: "${AUTH_PASSWORD}"
+    working_dir: /home/STIM/backend
+    command: [ "bash", "-c", "python -m alembic upgrade head && python -m uvicorn STIM.main:app --port=7377 --host=0.0.0.0 --reload" ]
+    volumes:
+      - STIM_dev:/home/.STIM # persist local sqlite db
+      - ./backend/STIM:/home/STIM/backend/STIM
+      - ./backend/alembic:/home/STIM/backend/alembic
+    networks:
+      - STIM
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+    networks:
+      - STIM

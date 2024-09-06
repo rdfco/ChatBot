@@ -4,6 +4,8 @@ from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
 
+from utils.exceptions import CouldNotFindAnswerException, InternalServerErrorException
+
 # Configs
 gtp_model = "gpt-4o"
 api_key = "sk-7Nv8_8hz-4llVHaLZwi0jo3fXedJcbWmEv3bYaaUfKT3BlbkFJjjgj6LPUoAA3zxH5Dp4Poj3ZNJsmPeL9G9qfK2BoYA"
@@ -100,8 +102,13 @@ run = client.beta.threads.runs.create_and_poll(
 )
 
 # Get the final response
-if run.status == "completed":
-    messages = client.beta.threads.messages.list(thread_id=thread.id)
-    print(messages[-1].content)
-else:
-    print(run.status)
+while run.status != "completed":
+    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+    if run.status == "failed":
+        raise InternalServerErrorException()
+
+messages = client.beta.threads.messages.list(thread_id=thread.id)
+try:
+    print("Assistant > ", messages.data[0].content[-1].text.value)
+except CouldNotFindAnswerException as e:
+    print(e)

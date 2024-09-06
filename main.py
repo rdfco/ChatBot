@@ -18,11 +18,12 @@ api_key = "sk-7Nv8_8hz-4llVHaLZwi0jo3fXedJcbWmEv3bYaaUfKT3BlbkFJjjgj6LPUoAA3zxH5
 client = OpenAI(api_key=api_key)
 model = ChatOpenAI(model=gtp_model, api_key=api_key)
 agent_name = "STIM"
-# FIXME: The subject can be changed based on the files content
-subject = "Sponge Iron"
 assistant = None
 # FIXME: The file paths can be changed
-file_paths = ["files/Sponge Iron report new version 2.pdf", "files/_isic_.csv"]
+# The file paths should be a dictionary with the key as the subject and the value as a list of the file paths
+file_paths = {
+    "Sponge Iron": ["files/Sponge Iron report new version 2.pdf", "files/_isic_.csv"],
+}
 
 # Get the assistant if exists
 for agent in client.beta.assistants.list():
@@ -33,26 +34,26 @@ for agent in client.beta.assistants.list():
 # Creating assistant if not exists
 if not assistant:
     # Get the file paths for the search and code interpreter tools based on the file extensions
-    search_files = []
-    code_interpreter_files = []
-    for file_path in file_paths:
-        if file_path.endswith(".pdf"):
-            search_files.append(file_path)
-        elif file_path.endswith(".csv"):
-            code_interpreter_files.append(file_path)
+    vector_stores = []
+    code_interpreter_uploaded_files = []
 
-    # Create vector store
-    vector_store = client.beta.vector_stores.create(name=subject)
+    for subject, files in file_paths.items():
+        # Create vector store
+        vector_store = client.beta.vector_stores.create(name=subject)
+        vector_stores.append(vector_store.id)
 
-    # Upload files
-    file_streams = [open(path, "rb") for path in search_files]
-    file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-        vector_store_id=vector_store.id, files=file_streams
-    )
-    code_interpreter_uploaded_files = [
-        client.files.create(file=open(path, "rb"), purpose="assistants").id
-        for path in code_interpreter_files
-    ]
+        # Upload files
+        file_streams = [open(path, "rb") for path in files if path.endswith(".pdf")]
+        file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
+            vector_store_id=vector_store.id, files=file_streams
+        )
+
+        code_interpreter_files = [
+            client.files.create(file=open(path, "rb"), purpose="assistants").id
+            for path in files
+            if path.endswith(".csv")
+        ]
+        code_interpreter_uploaded_files.extend(code_interpreter_files)
 
     # Create assistant
     assistant = client.beta.assistants.create(
@@ -62,7 +63,7 @@ if not assistant:
         model=gtp_model,
         tool_resources={
             "code_interpreter": {"file_ids": code_interpreter_uploaded_files},
-            "file_search": {"vector_store_ids": [vector_store.id]},
+            "file_search": {"vector_store_ids": vector_stores},
         },
     )
 
@@ -83,10 +84,11 @@ example_selector = NGramOverlapExampleSelector(
     example_prompt=example_prompt,
     threshold=-1.0,
 )
+subjects = ", ".join([f"'{subject}'" for subject in list(file_paths.keys())])
 dynamic_prompt = FewShotPromptTemplate(
     example_selector=example_selector,
     example_prompt=example_prompt,
-    prefix=f"Give the similar sentence to the user query. If you can't find any and the query is not related to the '{subject}', please just write 'Can not find any', but if the query is related to the '{subject}', please just write 'Ask GPT'",
+    prefix=f"Give the similar sentence to the user query. If you can't find any and the query is not related to one of the [{subjects}] subjects, please just write 'Can not find any', but if the query is related, please just write 'Ask GPT'",
     suffix="Input: {query}\nOutput:",
     input_variables=["query"],
 )

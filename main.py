@@ -1,3 +1,5 @@
+import logging
+
 from langchain_community.example_selectors import NGramOverlapExampleSelector
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import FewShotPromptTemplate, PromptTemplate
@@ -6,14 +8,20 @@ from openai import OpenAI
 
 from utils.exceptions import CouldNotFindAnswerException, InternalServerErrorException
 
+logging.basicConfig(
+    level=logging.ERROR, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 # Configs
 gtp_model = "gpt-4o"
 api_key = "sk-7Nv8_8hz-4llVHaLZwi0jo3fXedJcbWmEv3bYaaUfKT3BlbkFJjjgj6LPUoAA3zxH5Dp4Poj3ZNJsmPeL9G9qfK2BoYA"
 client = OpenAI(api_key=api_key)
 model = ChatOpenAI(model=gtp_model, api_key=api_key)
 agent_name = "STIM"
-vector_store_name = "Sponge Iron"
+# FIXME: The subject can be changed based on the files content
+subject = "Sponge Iron"
 assistant = None
+# FIXME: The file paths can be changed
 file_paths = ["files/Sponge Iron report new version 2.pdf", "files/_isic_.csv"]
 
 # Get the assistant if exists
@@ -34,7 +42,7 @@ if not assistant:
             code_interpreter_files.append(file_path)
 
     # Create vector store
-    vector_store = client.beta.vector_stores.create(name="Sponge Iron")
+    vector_store = client.beta.vector_stores.create(name=subject)
 
     # Upload files
     file_streams = [open(path, "rb") for path in search_files]
@@ -66,8 +74,9 @@ example_prompt = PromptTemplate(
     input_variables=["input", "output"],
     template="Input: {input}\nOutput: {output}",
 )
+# FIXME: The examples should be changed based on the subject and the given examples
 examples = [
-    {"input": "Best companies", "output": "Top applicants"},
+    {"input": "Best patent companies", "output": "Top patent applicants"},
 ]
 example_selector = NGramOverlapExampleSelector(
     examples=examples,
@@ -77,38 +86,48 @@ example_selector = NGramOverlapExampleSelector(
 dynamic_prompt = FewShotPromptTemplate(
     example_selector=example_selector,
     example_prompt=example_prompt,
-    prefix="Give the similar sentence to the user query.",
+    prefix=f"Give the similar sentence to the user query. If you can't find any and the query is not related to the '{subject}', please just write 'Can not find any', but if the query is related to the '{subject}', please just write 'Ask GPT'",
     suffix="Input: {query}\nOutput:",
     input_variables=["query"],
 )
 parser = StrOutputParser()
 chain = dynamic_prompt | model | parser
 final_prompt = chain.invoke({"query": user_message})
+logging.info(f"Final prompt: {final_prompt}")
 
-# Create a thread
-thread = client.beta.threads.create(
-    messages=[
-        {
-            "role": "user",
-            "content": final_prompt,
-        }
-    ]
-)
+# If the user query is not related to the subject, raise an exception, otherwise if the user query is related to the subject, ask public GPT, otherwise ask the assistant based on the uploaded files
+if final_prompt == "Can not find any":
+    print(CouldNotFindAnswerException())
+elif final_prompt == "Ask GPT":
+    chain = model | parser
+    print(chain.invoke(user_message))
+else:
+    # Create a thread
+    thread = client.beta.threads.create(
+        messages=[
+            {
+                "role": "user",
+                "content": final_prompt,
+            }
+        ]
+    )
 
-# Run the thread
-run = client.beta.threads.runs.create_and_poll(
-    thread_id=thread.id,
-    assistant_id=assistant.id,
-)
+    # Run the thread
+    run = client.beta.threads.runs.create_and_poll(
+        thread_id=thread.id,
+        assistant_id=assistant.id,
+    )
 
-# Get the final response
-while run.status != "completed":
-    run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-    if run.status == "failed":
-        raise InternalServerErrorException()
+    # Get the final response
+    while run.status != "completed":
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
+        if run.status == "failed":
+            logging.error(run)
+            print(InternalServerErrorException())
 
-messages = client.beta.threads.messages.list(thread_id=thread.id)
-try:
-    print("Assistant > ", messages.data[0].content[-1].text.value)
-except CouldNotFindAnswerException as e:
-    print(e)
+    messages = client.beta.threads.messages.list(thread_id=thread.id)
+    try:
+        print("Assistant > ", messages.data[0].content[-1].text.value)
+    except Exception as e:
+        logging.error(e)
+        print(CouldNotFindAnswerException())

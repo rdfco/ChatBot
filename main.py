@@ -75,9 +75,197 @@ example_prompt = PromptTemplate(
     input_variables=["input", "output"],
     template="Input: {input}\nOutput: {output}",
 )
-# FIXME: The examples should be changed based on the subject and the given examples
 examples = [
     {"input": "Best patent companies", "output": "Top patent applicants"},
+    {"input": "Leading patent owners", "output": "Top Owners"},
+    {"input": "Most cited patents", "output": "Highly-Cited Applicants"},
+    {
+        "input": "Industry collaboration trends",
+        "output": "Top Ten Applicants’ collaborations",
+    },
+    {"input": "Top tech fields", "output": "Top Technologies by Class"},
+    {
+        "input": "Best innovations in last 5 years",
+        "output": "Five Recent dominant technologies",
+    },
+    {"input": "Most important patents", "output": "Key Patents"},
+    {
+        "input": "Main themes in Sponge Iron patents",
+        "output": "The main themes of patents",
+    },
+    {"input": "Key patent clusters", "output": "Technology clustering"},
+    {"input": "Top inventors in patenting", "output": "Top inventors"},
+    {
+        "input": "Leading applicants in the last 5 years",
+        "output": "Pioneer companies in the last 5 years",
+    },
+    {"input": "Patent application trends", "output": "Patent Family Analysis"},
+    {"input": "Patent market reach", "output": "Patent-Market Coverage"},
+    {
+        "input": "Patent geographical distribution",
+        "output": "Geographical jurisdiction",
+    },
+    {
+        "input": "Recent patent advancements",
+        "output": "Top Technologies and Main Trends",
+    },
+    {
+        "input": "Technological efficiency improvements",
+        "output": "Efficiency Enhancements",
+    },
+    {"input": "Emission reduction techniques", "output": "Emission Reduction"},
+    {
+        "input": "Raw materials utilization advancements",
+        "output": "Raw Material Utilization",
+    },
+    {
+        "input": "Process control automations",
+        "output": "Process Control and Automation",
+    },
+    {
+        "input": "Energy-saving techniques in patents",
+        "output": "Energy Consumption Reduction",
+    },
+    {
+        "input": "Hydrogen-based production expansion",
+        "output": "Expansion of Hydrogen-Based DRI Plants",
+    },
+    {
+        "input": "New DRI projects",
+        "output": "New DRI Projects Underway to Meet Growing Demand",
+    },
+    {"input": "Patent continuity trends", "output": "Top applicant activity"},
+    {
+        "input": "Emerging business strategies",
+        "output": "Pioneer companies in the last 5 years",
+    },
+    {
+        "input": "Top patent applicant network",
+        "output": "The strongest cooperation networks",
+    },
+    {"input": "Pending patent insights", "output": "Pending patents"},
+    {
+        "input": "Main processes and market trends",
+        "output": "Main Processes and Market Trends",
+    },
+    {
+        "input": "Market share of major companies",
+        "output": "Market Share of Main Producers",
+    },
+    {"input": "Geographical market analysis", "output": "Market at a Glance"},
+    {
+        "input": "Technological development hot spots",
+        "output": "Top Technologies by Sub-Class",
+    },
+    {"input": "Patent process advancements", "output": "Top Processes"},
+    {
+        "input": "Mergers and acquisitions in patents",
+        "output": "Merge and Acquisitions",
+    },
+    {"input": "Key patenting activities", "output": "Top applicant clustering"},
+    {"input": "Focused technology fields", "output": "Focused industries"},
+    {
+        "input": "Critical technology segments",
+        "output": "Top Technologies by Main-Group",
+    },
+    {"input": "Sub-group technology trends", "output": "Top Technologies by Sub-Group"},
+    {
+        "input": "Patent landscape highlights",
+        "output": "Patent Landscape Report at a Glance",
+    },
+    {
+        "input": "Recent technology innovations",
+        "output": "Five key technology areas in last 5 years",
+    },
+    {"input": "Significant patents by citations", "output": "Key patents"},
+    {"input": "Top patenting countries", "output": "Global patent registrations"},
+    {
+        "input": "Emerging market trends in patents",
+        "output": "Recent market trends in patents",
+    },
+    {
+        "input": "Yearly patent application trends",
+        "output": "Yearly patent applications",
+    },
+    {"input": "Patent examination statistics", "output": "Patent examination process"},
+    {
+        "input": "Process heat recovery innovations",
+        "output": "Improved heat recovery systems",
+    },
+    {
+        "input": "Top furnace designs in patenting",
+        "output": "Top furnace designs innovations",
+    },
+    {
+        "input": "Significant collaborative efforts",
+        "output": "Key collaborative networks",
+    },
+    {"input": "Main applicants activity analysis", "output": "Main applicant activity"},
+    {
+        "input": "Most active regions in patenting",
+        "output": "Geographical jurisdiction in patents",
+    },
+    {"input": "Patent innovation trends", "output": "Innovation trends in patents"},
+    {
+        "input": "New emerging technologies",
+        "output": "Emerging technologies in patents",
+    },
+    {
+        "input": "Advanced monitoring systems in patents",
+        "output": "Advanced monitoring systems",
+    },
+    {
+        "input": "Energy efficiency trends in patents",
+        "output": "Energy efficiency trends",
+    },
+    {
+        "input": "Technological advancements in DRI",
+        "output": "Technological advancements in DRI",
+    },
+    {"input": "Patent-based technology outlook", "output": "Patent technology outlook"},
+    {
+        "input": "New product development based on patents",
+        "output": "New product development strategies",
+    },
+    {
+        "input": "Future technology trends in patents",
+        "output": "Future technology trends",
+    },
+    {"input": "Leading patenting methods", "output": "Leading patenting methods"},
+    {
+        "input": "Sustainable technologies in patents",
+        "output": "Sustainable technologies trends",
+    },
+    {
+        "input": "Automation in patent processes",
+        "output": "Automation in patent processes",
+    },
+    {
+        "input": "Process improvements in patenting",
+        "output": "Process improvements in patents",
+    },
+    {
+        "input": "Alternate materials in patents",
+        "output": "Alternate materials utilization",
+    },
+    {
+        "input": "Top patent applicants in specific sectors",
+        "output": "Top sector-specific patent applicants",
+    },
+    {"input": "Significant growth areas", "output": "Patent application growth areas"},
+    {
+        "input": "Market trends by patent analysis",
+        "output": "Market trends by patent analysis",
+    },
+    {
+        "input": "Significant challenges in patenting",
+        "output": "Challenges in patenting efforts",
+    },
+    {
+        "input": "Notable technological leaders",
+        "output": "Technological leaders in patenting",
+    },
+    {"input": "Technological breakthroughs", "output": "Breakthroughs in patenting"},
 ]
 example_selector = NGramOverlapExampleSelector(
     examples=examples,

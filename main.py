@@ -55,7 +55,7 @@ if not assistant:
     # Create assistant
     assistant = client.beta.assistants.create(
         name=agent_name,
-        instructions="You are an expert patent analyst. Use you knowledge base to answer questions about patents.",
+        instructions="You are an expert patent analyst. When asked a question, you will parse the attachments in each thread and answer to the messages.",
         tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
         model=gtp_model,
         tool_resources={
@@ -77,7 +77,7 @@ thread = client.beta.threads.create(
     messages=[
         {
             "role": "user",
-            "content": "Get the question of the client, check it with prompts (shown in prompt column) and find the similar prompts. If there are more than one similar prompts, select the most similar one. And then extract the response (shown in response column). If there is no similar prompt, then investigate whether it is related to the report or not. If related, extract the response from the report file. If you can not find it from the report, respond it by yourself from public references. If it is not related, return 'No response find'.",
+            "content": f"Get the question of the client, Based on the attachment file check it with prompts (shown in 'prompt' column) and find the similar prompts. If there are more than one similar prompts, select the most similar one. And then extract the response (shown in 'response' column). If there is no similar prompt, then investigate whether it is related to the report or not. If related, extract the response from the report file. If you can not find it from the report, respond it by yourself from public references. If it is not related, return 'No response find'. Client question: {user_message}",
             "attachments": [
                 {"file_id": prompt_file.id, "tools": [{"type": "code_interpreter"}]}
             ],

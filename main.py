@@ -1,5 +1,6 @@
 import logging
 
+import pandas as pd
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
 
@@ -19,7 +20,10 @@ assistant = None
 # FIXME: The file paths can be changed
 # The file paths should be a dictionary with the key as the subject and the value as a list of the file paths
 file_paths = {
-    "Sponge Iron": ["files/Sponge Iron report new version 2.pdf", "files/_isic_.csv"],
+    "Sponge Iron": [
+        "files/Sponge Iron report new version 2.pdf",
+        "files/_isic_.csv",
+    ],
 }
 
 # Get the assistant if exists
@@ -55,7 +59,7 @@ if not assistant:
     # Create assistant
     assistant = client.beta.assistants.create(
         name=agent_name,
-        instructions="You are an expert patent analyst. When asked a question, you will parse the attachments in each thread and answer to the messages.",
+        instructions="You are an expert patent analyst. When asked a question, you will answer to the threads' messages based on the uploaded files.",
         tools=[{"type": "file_search"}, {"type": "code_interpreter"}],
         model=gtp_model,
         tool_resources={
@@ -67,21 +71,22 @@ if not assistant:
 # Get user input
 user_message = input("You > ")
 
-# Upload the main csv that contains the prompts and the GPT results
-prompt_file = client.files.create(
-    file=open("files/prompts.csv", "rb"), purpose="assistants"
-)
+csv_file = pd.read_csv("files/prompts.csv")
 
 # Create a thread
 thread = client.beta.threads.create(
     messages=[
         {
             "role": "user",
-            "content": f"Get the question of the client, Based on the attachment file check it with prompts (shown in 'prompt' column) and find the similar prompts. If there are more than one similar prompts, select the most similar one. And then extract the response (shown in 'response' column). If there is no similar prompt, then investigate whether it is related to the report or not. If related, extract the response from the report file. If you can not find it from the report, respond it by yourself from public references. If it is not related, return 'No response find'. Client question: {user_message}",
-            "attachments": [
-                {"file_id": prompt_file.id, "tools": [{"type": "code_interpreter"}]}
-            ],
-        }
+            "content": f"Get the question of the client, then check it with the prompts (shown in 'prompt' column) and find the similar prompts. If there are more than one similar prompts, select the most similar one. And then extract the response (shown in 'response' column). If there is no similar prompt, then investigate whether it is related to the report or not. If related, extract the response from the report file. If you can not find it from the report, respond it by yourself from public references. If it is not related, return 'No response find'. Client question: {user_message}",
+        },
+        {
+            "role": "user",
+            "content": f"""
+            Prompts and responses:
+            {csv_file}
+            """,
+        },
     ]
 )
 

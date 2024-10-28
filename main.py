@@ -31,13 +31,14 @@ def format_docs(docs):
 csv_vectorstore = Chroma.from_documents(
     documents=csv_splits, embedding=OpenAIEmbeddings(api_key=api_key)
 )
-user_message = input("You > ")
+
 
 csv_retriever = csv_vectorstore.as_retriever(search_type="mmr")
 
-pdf_loader = PyPDFLoader("files/Sponge Iron report new version 2.pdf")
+pdf_loader1 = PyPDFLoader("files/Sponge Iron report new version 2.pdf")
+pdf_loader2 = PyPDFLoader("files/AI and Bio Slides Ver2.pdf")
 
-pdf_docs = pdf_loader.load()
+pdf_docs = pdf_loader1.load() + pdf_loader2.load()
 
 pdf_splits = text_splitter.split_documents(pdf_docs)
 
@@ -84,6 +85,8 @@ qa_chain = (
     | model
     | StrOutputParser()
 )
+
+user_message = input("You > ")
 
 result = qa_chain.invoke(user_message)
 

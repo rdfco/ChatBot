@@ -1,10 +1,16 @@
 import logging
 
 from langchain_chroma import Chroma
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_community.document_loaders import CSVLoader, PyPDFLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import (
+    ConfigurableFieldSpec,
+    RunnableParallel,
+    RunnablePassthrough,
+)
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -76,18 +82,53 @@ RAG_TEMPLATE = """
 rag_prompt = ChatPromptTemplate.from_template(RAG_TEMPLATE)
 
 qa_chain = (
-    {
-        "prompts": csv_retriever | format_docs,
-        "report": pdf_retriever | format_docs,
-        "question": RunnablePassthrough(),
-    }
+    RunnablePassthrough.assign(
+        prompts=lambda x: format_docs(csv_retriever.invoke(x["question"]))
+    )
+    | RunnablePassthrough.assign(
+        report=lambda x: format_docs(pdf_retriever.invoke(x["question"]))
+    )
     | rag_prompt
     | model
     | StrOutputParser()
 )
 
+
+def get_session_history(user_id: str, conversation_id: str):
+    return SQLChatMessageHistory(f"{user_id}--{conversation_id}", "sqlite:///memory.db")
+
+
+with_message_history = RunnableWithMessageHistory(
+    qa_chain,
+    get_session_history,
+    input_messages_key="question",
+    history_messages_key="history",
+    history_factory_config=[
+        ConfigurableFieldSpec(
+            id="user_id",
+            annotation=str,
+            name="User ID",
+            description="Unique identifier for the user.",
+            default="",
+            is_shared=True,
+        ),
+        ConfigurableFieldSpec(
+            id="conversation_id",
+            annotation=str,
+            name="Conversation ID",
+            description="Unique identifier for the conversation.",
+            default="",
+            is_shared=True,
+        ),
+    ],
+)
+
 user_message = input("You > ")
 
-result = qa_chain.invoke(user_message)
+
+result = with_message_history.invoke(
+    {"question": user_message},
+    config={"configurable": {"user_id": "1", "conversation_id": "1"}},
+)
 
 print("Assistant > ", result)

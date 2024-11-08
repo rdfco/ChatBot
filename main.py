@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from langchain_chroma import Chroma
+from langchain_community.callbacks.manager import get_openai_callback
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_community.document_loaders import CSVLoader, PyPDFLoader
 from langchain_core.output_parsers import StrOutputParser
@@ -12,7 +13,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 logging.basicConfig(
-    level=logging.ERROR, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
 
@@ -91,8 +92,8 @@ class Assistant:
             4. Extract the corresponding answer from the "response" column (in the prompts section of the most similar prompt).
             5. If no similar prompt is found, check whether the question is related to the report.
                 5.1 If related, extract the answer from the report.
-                5.2 If no information is available in the report, provide an answer using public references.
-            6. If the question is unrelated, return "No response found" without answering from public references.
+                    5.1.1 If no information is available in the report, provide an answer using public references.
+                5.2 If the question is unrelated, return "No response found" without answering from public references.
 
             <prompts>
             {prompts}
@@ -169,12 +170,17 @@ class Assistant:
     def get_response(
         self, question: str, user_id: str = "1", conversation_id: str = "1"
     ):
-        result = self.qa_with_message_history.invoke(
-            {"question": question},
-            config={
-                "configurable": {"user_id": user_id, "conversation_id": conversation_id}
-            },
-        )
+        with get_openai_callback() as cb:
+            result = self.qa_with_message_history.invoke(
+                {"question": question},
+                config={
+                    "configurable": {
+                        "user_id": user_id,
+                        "conversation_id": conversation_id,
+                    }
+                },
+            )
+            logging.info(cb)
 
         return f"Assistant > {result}\n" + "-" * 50
 

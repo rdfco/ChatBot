@@ -87,13 +87,12 @@ class Assistant:
         You are a patent analyst.
         Use following steps to answer the 'client question':
             1. Receive the "client question."
-            2. Compare it against the prompts in the prompts section.
-            3. If multiple similar prompts are found, select the most relevant one.
-            4. Extract the corresponding answer from the "response" column (in the prompts section of the most similar prompt).
-            5. If no similar prompt is found, check whether the question is related to the report.
-                5.1 If related, extract the answer from the report.
-                    5.1.1 If no information is available in the report, provide an answer using public references.
-                5.2 If the question is unrelated, return "No response found" without answering from public references.
+            2. Compare it against the prompts in the prompts section and find the the most relevant one.
+                2.1. If the question is similar to a prompt, extract the corresponding answer from the "response" column of the most similar prompt in the prompts section.
+                2.2. If no similar prompt is found, check whether the question is related to the report.
+                    2.2.1. If related, extract the answer from the report.
+                        2.2.1.1 If no information is available in the report, provide an answer using public references.
+                    2.2.2. If the question is unrelated, return "No response found" without answering from public references.
 
             <prompts>
             {prompts}

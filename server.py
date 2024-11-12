@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 
@@ -11,6 +12,7 @@ from langchain_core.runnables import ConfigurableFieldSpec, RunnablePassthrough
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from websockets.asyncio.server import serve
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -190,7 +192,17 @@ assistant.upload_pdf_files(
 )
 assistant.upload_csv_files(["files/prompts.csv"])
 
-while True:
-    user_message = input("User > ")
+
+async def user_response(websocket):
+    websocket.send("User > ")
+    user_message = await websocket.recv()
     response = assistant.get_response(user_message)
-    print(response)
+    await websocket.send(response)
+
+
+async def main():
+    async with serve(user_response, "localhost", 8765):
+        await asyncio.get_running_loop().create_future()
+
+
+asyncio.run(main())

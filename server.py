@@ -49,14 +49,19 @@ class Assistant:
     def upload_csv_files(self, file_paths: list[str]):
         csv_splits = []
         for file_path in file_paths:
+            if self._csv_file_ids.get(file_path):
+                continue
             csv_loader = CSVLoader(file_path)
             csv_data = csv_loader.load()
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=500, chunk_overlap=0
             )
             csv_splits.extend(text_splitter.split_documents(csv_data))
-            for i, _ in enumerate(csv_splits):
-                self._csv_file_ids[file_path + f"#{i}"] = uuid.uuid4().hex
+            for _ in csv_splits:
+                if self._csv_file_ids.get(file_path):
+                    self._csv_file_ids[file_path].append(uuid.uuid4().hex)
+                else:
+                    self._csv_file_ids[file_path] = [uuid.uuid4().hex]
 
         self.csv_vectorstore.add_documents(
             documents=csv_splits, ids=list(self._csv_file_ids.values())
@@ -65,14 +70,19 @@ class Assistant:
     def upload_pdf_files(self, file_paths: list[str]):
         pdf_splits = []
         for file_path in file_paths:
+            if self._pdf_file_ids.get(file_path):
+                continue
             pdf_loader = PyPDFLoader(file_path)
             pdf_data = pdf_loader.load()
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=500, chunk_overlap=0
             )
             pdf_splits.extend(text_splitter.split_documents(pdf_data))
-            for i, _ in enumerate(pdf_splits):
-                self._pdf_file_ids[file_path + f"#{i}"] = uuid.uuid4().hex
+            for _ in pdf_splits:
+                if self._pdf_file_ids.get(file_path):
+                    self._pdf_file_ids[file_path].append(uuid.uuid4().hex)
+                else:
+                    self._pdf_file_ids[file_path] = [uuid.uuid4().hex]
 
         self.pdf_vectorstore.add_documents(
             documents=pdf_splits, ids=list(self._pdf_file_ids.values())

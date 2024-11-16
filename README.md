@@ -13,7 +13,12 @@ source venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-## Run the project
+## Run the server
 ```sh
-python main.py
+python server.py
+```
+
+## Run the client
+```sh
+python client.py
 ```
